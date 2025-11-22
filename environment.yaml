@@ -1,0 +1,43 @@
+name: ambiente_fase4_tc
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  # --- Core Python ---
+  - python=3.10
+  - pip
+
+  - typer
+  - loguru
+  - tqdm
+  - ipython
+  - jupyterlab
+  - notebook
+  - black
+  - flake8
+  - isort
+  - pytest
+
+  # --- Data Science & ML ---
+  - pandas
+  - numpy
+  - matplotlib
+  - seaborn
+  - scikit-learn>=1.2.0
+  - imbalanced-learn>=0.10.0
+  - joblib
+
+  # --- Aplicação Web ---
+  - streamlit>=1.30.0
+
+  # --- Estrutura e Documentação ---
+  - cookiecutter
+  - cookiecutter-data-science
+  - mkdocs
+  - mkdocs-material
+  - mkdocs-jupyter
+
+  - pip:
+    - python-dotenv
+    - mkdocs
+    - -e .
