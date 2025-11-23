@@ -4,5 +4,4 @@ site_author: grupo 63 FIAP Fase 4
 # 
 nav:
   - Início: index.md
-  - Primeiros Passos: getting-started.md
   - Modelagem e Algoritmos: modelagem.md
