@@ -62,7 +62,7 @@ def configurar_sidebar():
             Este aplicativo e modelo foi desenvolvido como parte da entrega do **Tech Challenge** da **Fase 4** sobre **Data Viz and Production Models**.
             
             🎓 **Curso:** Pós-Graduação em Data Analytics  
-            🏫 **Instituição:** FIAP + Alurr
+            🏫 **Instituição:** FIAP + Alura
             """
         )
         
