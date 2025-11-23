@@ -7,15 +7,14 @@ import pandas as pd
 import requests
 import streamlit as st
 
-# --- CONFIGURAÇÃO DA PÁGINA ---
+# CONFIGURAÇÃO DA PÁGINA 
 st.set_page_config(
     page_title="Predição de Risco de Obesidade",
     page_icon="🩺",
     layout="centered"
 )
 
-
-# --- DEFINIÇÃO DE FUNÇÕES ---
+# DEFINIÇÃO DE FUNÇÕES
 
 def ordenar_opcoes(lista):
     """
@@ -28,20 +27,19 @@ def ordenar_opcoes(lista):
     
     return sorted(lista, key=normalizar)
 
-
 @st.cache_resource
+
 def load_model():
     """
     Carrega o modelo treinado (.joblib) localmente ou via GitHub.
     """
-    # 1. Tentativa Local
+    # Tentativa Local
     try:
         return joblib.load('modelo_risco_obesidade_random_forest.joblib')
     except FileNotFoundError:
         pass
 
-    # 2. Tentativa Remota (GitHub Raw)
-    # ATENÇÃO: Substitua pelo link 'Raw' do seu repositório
+    # Tentativa Remota (GitHub Raw)
     url_modelo = "https://github.com/RicardViana/fiap-data-viz-and-production-models-tc/raw/refs/heads/main/models/modelo_risco_obesidade_random_forest.joblib"
     
     try:
@@ -53,15 +51,14 @@ def load_model():
     
     return None
 
-
 def get_user_input_features():
     """
     Coleta os dados do usuário no corpo principal da página e retorna um DataFrame.
     """
     
-    # --- SEÇÃO 1: DADOS PESSOAIS ---
+    # DADOS PESSOAIS
     st.header("1. Dados Pessoais")
-    st.markdown("Inicie informando as características físicas básicas.")
+    st.markdown("Inicie informando as características físicas básicas")
     
     col1, col2 = st.columns(2)
     
@@ -81,7 +78,7 @@ def get_user_input_features():
     st.info(f"ℹ️ **IMC Calculado:** {imc} kg/m²")
     st.markdown("---")
 
-    # --- SEÇÃO 2: HISTÓRICO E HÁBITOS ---
+    # HISTÓRICO E HÁBITOS
     st.header("2. Histórico e Monitoramento")
     
     col_h1, col_h2 = st.columns(2)
@@ -102,7 +99,7 @@ def get_user_input_features():
 
     st.markdown("---")
 
-    # --- SEÇÃO 3: HÁBITOS ALIMENTARES ---
+    # HÁBITOS ALIMENTARES
     st.header("3. Hábitos Alimentares")
 
     # Mapeamentos (Dicionários)
@@ -152,7 +149,7 @@ def get_user_input_features():
 
     st.markdown("---")
 
-    # --- SEÇÃO 4: ESTILO DE VIDA ---
+    # ESTILO DE VIDA
     st.header("4. Estilo de Vida")
 
     mapa_atv = {
@@ -217,8 +214,7 @@ def get_user_input_features():
     
     return pd.DataFrame(data, index=[0])
 
-
-# --- FUNÇÃO PRINCIPAL (EXECUÇÃO) ---
+# FUNÇÃO PRINCIPAL (EXECUÇÃO)
 
 def main():
     # Carrega o modelo no início
@@ -228,7 +224,7 @@ def main():
     st.title("🩺 Análise de Risco de Obesidade")
     st.markdown("""
     Preencha o formulário abaixo com os dados do paciente.
-    O sistema utilizará Inteligência Artificial para calcular a probabilidade de risco de obesidade.
+    O sistema utilizará modelo de Machine Learning para calcular a probabilidade de risco de obesidade.
     """)
     st.markdown("---")
 
@@ -263,7 +259,7 @@ def main():
             except Exception as e:
                 st.error(f"Ocorreu um erro técnico ao realizar a predição: {e}")
         else:
-            st.error("⚠️ O modelo de Inteligência Artificial não foi carregado corretamente. Verifique os arquivos.")
+            st.error("⚠️ O modelo de Machine Learning não foi carregado corretamente. Verifique os arquivos.")
 
 # Ponto de entrada do script
 if __name__ == "__main__":
