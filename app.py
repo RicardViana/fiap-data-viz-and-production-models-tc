@@ -1,212 +1,194 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 import joblib
-import requests
-import io
+import numpy as np
+import requests # Nova importação
+import io       # Nova importação
 
-# --- CONFIGURAÇÃO DA PÁGINA ---
-st.set_page_config(page_title="Predição de Risco de Obesidade", layout="centered")
+# Configuração da Página
+st.set_page_config(
+    page_title="Predição de Risco de Obesidade",
+    page_icon="🩺",
+    layout="centered"
+)
 
-# --- CARREGAMENTO DO MODELO DO GITHUB ---
+# --- FUNÇÃO PARA CARREGAR O MODELO ---
 @st.cache_resource
-def carregar_modelo_github():
-    # URL RAW do seu modelo no GitHub (SUBSTITUA PELO SEU LINK REAL)
-    # Exemplo: https://raw.githubusercontent.com/SEU_USUARIO/SEU_REPO/main/modelo.joblib
-    url_modelo = "https://github.com/RicardViana/fiap-data-viz-and-production-models-tc/raw/refs/heads/main/models/modelo_risco_obesidade_random_forest.joblib" 
+def load_model():
+    # Substitua pelo SEU link Raw do GitHub
+    # Exemplo: https://raw.githubusercontent.com/SEU_USUARIO/NOME_REPO/main/modelo_risco_obesidade_random_forest.joblib
+    url_modelo = "https://github.com/RicardViana/fiap-data-viz-and-production-models-tc/raw/refs/heads/main/models/modelo_risco_obesidade_random_forest.joblib"
     
     try:
-        if "COLE_AQUI" in url_modelo:
-            st.warning("⚠️ Você precisa substituir a variável 'url_modelo' no código pelo link Raw do seu GitHub.")
-            return None
-            
+        # Faz o download do arquivo para a memória
         response = requests.get(url_modelo)
-        response.raise_for_status()
+        response.raise_for_status() # Garante que o download funcionou (status 200)
         
-        modelo_arquivo = io.BytesIO(response.content)
-        modelo = joblib.load(modelo_arquivo)
-        return modelo
+        # O joblib lê o arquivo diretamente da memória (BytesIO)
+        model = joblib.load(io.BytesIO(response.content))
+        return model
     except Exception as e:
-        st.error(f"Erro ao baixar/carregar o modelo do GitHub: {e}")
+        st.error(f"Erro ao carregar o modelo do Git: {e}")
         return None
 
-modelo = carregar_modelo_github()
+model = load_model()
 
-def main():
-    st.title("Monitor de Saúde & Predição")
-    st.write("Preencha os dados abaixo para analisar o perfil de risco.")
+# --- CABEÇALHO ---
+st.title("🩺 Análise de Risco de Obesidade")
+st.write("Este aplicativo utiliza Machine Learning para prever se um paciente possui alto risco de obesidade com base em seus hábitos e características.")
+st.markdown("---")
 
-    # ==============================================================================
-    # SEÇÃO 1: MAPEAMENTOS
-    # ==============================================================================
+# --- FORMULÁRIO DE ENTRADA ---
+st.sidebar.header("Dados do Paciente")
+
+def user_input_features():
+    # --- 1. Dados Pessoais (Cálculo do IMC implícito) ---
+    st.subheader("1. Dados Pessoais")
+    col1, col2 = st.columns(2)
     
-    mapa_genero = {"Feminino": np.int64(0), "Masculino": np.int64(1)}
+    with col1:
+        idade = st.number_input("Idade", min_value=10, max_value=100, value=25)
+        altura = st.number_input("Altura (m)", min_value=1.0, max_value=2.5, value=1.70)
     
+    with col2:
+        genero_label = st.selectbox("Gênero", ["Masculino", "Feminino"])
+        peso = st.number_input("Peso (kg)", min_value=30.0, max_value=200.0, value=70.0)
+
+    # Cálculo do IMC (feature fundamental do seu modelo)
+    imc = int(np.ceil(peso / (altura ** 2)))
+    st.info(f"IMC Calculado: {imc}")
+
+    # Conversão de Gênero (Notebook Cell 9: Female=1, Male=0)
+    genero = 1 if genero_label == "Feminino" else 0
+
+    st.markdown("---")
+
+    # --- 2. Histórico e Hábitos Binários ---
+    st.subheader("2. Histórico e Monitoramento")
+    
+    historico = st.radio("Histórico familiar de sobrepeso?", ["Sim", "Não"], horizontal=True)
+    fuma = st.radio("Você fuma?", ["Sim", "Não"], horizontal=True)
+    caloricos = st.radio("Consome alimentos calóricos frequentemente?", ["Sim", "Não"], horizontal=True)
+    monitora = st.radio("Monitora calorias ingeridas?", ["Sim", "Não"], horizontal=True)
+
+    # Mapeamento Binário (Notebook Cell 9: Yes=1, No=0)
+    b_historico_familiar = 1 if historico == "Sim" else 0
+    b_fuma = 1 if fuma == "Sim" else 0
+    b_come_alimentos_caloricos = 1 if caloricos == "Sim" else 0
+    b_monitora_calorias = 1 if monitora == "Sim" else 0
+
+    st.markdown("---")
+
+    # --- 3. Hábitos Alimentares (Categorias mapeadas do Notebook) ---
+    st.subheader("3. Hábitos Alimentares")
+
+    # Qtd Refeições (Notebook Cell 11)
     mapa_refeicoes = {
-        "Uma refeição principal por dia": "Uma_refeicao_principal_por_dia",
-        "Duas refeições principais por dia": "Duas_refeicoes_principais_por_dia",
-        "Três refeições principais por dia": "Tres_refeicoes_principais_por_dia",
-        "Quatro ou mais refeições principais": "Quatro_ou_mais_refeicoes_principais_por_dia"
+        '1': 'Uma_refeicao_principal_por_dia',
+        '2': 'Duas_refeicoes_principais_por_dia',
+        '3': 'Tres_refeicoes_principais_por_dia',
+        '4+': 'Quatro_ou_mais_refeicoes_principais_por_dia'
     }
+    refeicao_key = st.select_slider("Quantas refeições principais por dia?", options=['1', '2', '3', '4+'])
+    qtd_refeicao = mapa_refeicoes[refeicao_key]
 
-    mapa_vegetais = {"Sempre": "Sempre", "Às vezes": "As_vezes", "Raramente": "Raramente"}
+    # Qtd Vegetais (Notebook Cell 10)
+    mapa_vegetais = {'Raramente': 'Raramente', 'Às vezes': 'As_vezes', 'Sempre': 'Sempre'}
+    veg_key = st.select_slider("Consumo de vegetais nas refeições?", options=['Raramente', 'Às vezes', 'Sempre'])
+    qtd_vegetais = mapa_vegetais[veg_key]
 
-    mapa_agua = {
-        "Menos de 1 litro (Baixo)": "Baixo_consumo",
-        "Entre 1 e 2 litros (Adequado)": "Consumo_adequado",
-        "Mais de 2 litros (Alto)": "Alto_consumo"
-    }
+    # Qtd Água (Notebook Cell 13)
+    mapa_agua = {'< 1 Litro': 'Baixo_consumo', '1-2 Litros': 'Consumo_adequado', '> 2 Litros': 'Alto_consumo'}
+    agua_key = st.select_slider("Consumo diário de água?", options=['< 1 Litro', '1-2 Litros', '> 2 Litros'])
+    qtd_agua = mapa_agua[agua_key]
 
-    mapa_atv_fisica = {
-        "Sedentário": "Sedentario",
-        "Baixa frequência": "Baixa_frequencia",
-        "Moderada frequência": "Moderada_frequencia",
-        "Alta frequência": "Alta_frequencia"
-    }
+    # Comer fora de hora
+    mapa_fora_hora = {'Não': 'no', 'Às vezes': 'Sometimes', 'Frequentemente': 'Frequently', 'Sempre': 'Always'}
+    fora_key = st.selectbox("Come entre as refeições?", options=list(mapa_fora_hora.keys()))
+    freq_come_fora_refeicao = mapa_fora_hora[fora_key]
 
-    mapa_internet = {"Pouco uso": "Uso_baixo", "Uso moderado": "Uso_moderado", "Uso intenso": "Uso_intenso"}
+    # Álcool
+    mapa_alcool = {'Não': 'no', 'Às vezes': 'Sometimes', 'Frequentemente': 'Frequently', 'Sempre': 'Always'}
+    alcool_key = st.selectbox("Consome álcool?", options=list(mapa_alcool.keys()))
+    freq_alcool = mapa_alcool[alcool_key]
 
-    mapa_frequencia_geral = {
-        "Sempre": "Always", "Frequentemente": "Frequently", "Às vezes": "Sometimes", "Nunca": "no"
-    }
+    st.markdown("---")
 
+    # --- 4. Estilo de Vida ---
+    st.subheader("4. Estilo de Vida")
+
+    # Atividade Física (Notebook Cell 14)
+    mapa_atv = {'Sedentário': 'Sedentario', 'Baixa': 'Baixa_frequencia', 'Moderada': 'Moderada_frequencia', 'Alta': 'Alta_frequencia'}
+    atv_key = st.select_slider("Frequência de atividade física?", options=list(mapa_atv.keys()))
+    qtd_atv_fisicas = mapa_atv[atv_key]
+
+    # Tempo na Internet (Notebook Cell 12)
+    mapa_net = {'Baixo (0-2h)': 'Uso_baixo', 'Moderado (3-5h)': 'Uso_moderado', 'Intenso (>5h)': 'Uso_intenso'}
+    net_key = st.select_slider("Tempo em dispositivos eletrônicos?", options=list(mapa_net.keys()))
+    qtd_tmp_na_internet = mapa_net[net_key]
+
+    # Transporte
     mapa_transporte = {
-        "Automóvel": "Automobile", "Bicicleta": "Bike", "Motocicleta": "Motorbike", 
-        "Transporte Público": "Public_Transportation", "Caminhando / A pé": "Walking"
+        'Transporte Público': 'Public_Transportation', 
+        'Caminhada': 'Walking', 
+        'Carro': 'Automobile', 
+        'Bicicleta': 'Bike', 
+        'Moto': 'Motorbike'
     }
+    transporte_key = st.selectbox("Meio de transporte principal?", options=list(mapa_transporte.keys()))
+    meio_de_transporte = mapa_transporte[transporte_key]
 
-    mapa_sim_nao = {"Não": np.int64(0), "Sim": np.int64(1)}
-
-    # ==============================================================================
-    # SEÇÃO 2: FORMULÁRIO
-    # ==============================================================================
-
-    st.subheader("Dados Pessoais")
-
-    label_genero = st.radio("Gênero:", list(mapa_genero.keys()), horizontal=True)
-    val_genero = mapa_genero[label_genero]
-
-    col_dados_fisicos = st.columns(3)
-    idade = col_dados_fisicos[0].number_input("Idade", min_value=10, max_value=100, value=25)
-    altura = col_dados_fisicos[1].number_input("Altura (m)", min_value=1.00, max_value=2.50, value=1.70, step=0.01)
-    peso = col_dados_fisicos[2].number_input("Peso (kg)", min_value=30.0, max_value=200.0, value=70.0, step=0.1)
-
-    label_refeicao = st.selectbox("Refeições diárias:", list(mapa_refeicoes.keys()))
-    val_refeicao = mapa_refeicoes[label_refeicao]
-
-    label_vegetais = st.selectbox("Consumo de vegetais:", list(mapa_vegetais.keys()))
-    val_vegetais = mapa_vegetais[label_vegetais]
-
-    label_agua = st.selectbox("Consumo de água:", list(mapa_agua.keys()))
-    val_agua = mapa_agua[label_agua]
-
-    label_atv = st.selectbox("Atividade física:", list(mapa_atv_fisica.keys()))
-    val_atv = mapa_atv_fisica[label_atv]
-
-    label_internet = st.selectbox("Tempo de tela (Internet):", list(mapa_internet.keys()))
-    val_internet = mapa_internet[label_internet]
-
-    st.markdown("---")
-    st.subheader("Hábitos")
+    # Criar Dicionário de Dados
+    data = {
+        'idade': idade,
+        'genero': genero,
+        'qtd_refeicao': qtd_refeicao,
+        'qtd_vegetais': qtd_vegetais,
+        'qtd_agua': qtd_agua,
+        'qtd_atv_fisicas': qtd_atv_fisicas,
+        'qtd_tmp_na_internet': qtd_tmp_na_internet,
+        'b_fuma': b_fuma,
+        'b_come_alimentos_caloricos': b_come_alimentos_caloricos,
+        'b_monitora_calorias': b_monitora_calorias,
+        'b_historico_familiar': b_historico_familiar,
+        'freq_come_fora_refeicao': freq_come_fora_refeicao,
+        'freq_alcool': freq_alcool,
+        'meio_de_transporte': meio_de_transporte,
+        'imc': imc
+    }
     
-    label_fuma = st.radio("Fuma?", list(mapa_sim_nao.keys()), horizontal=True)
-    val_fuma = mapa_sim_nao[label_fuma]
+    # Converter para DataFrame respeitando a ordem exata do treinamento (Notebook Cell 23/29)
+    features = pd.DataFrame(data, index=[0])
+    return features
 
-    label_caloricos = st.radio("Come alimentos muito calóricos?", list(mapa_sim_nao.keys()), horizontal=True)
-    val_caloricos = mapa_sim_nao[label_caloricos]
+# Captura os dados
+input_df = user_input_features()
 
-    label_monitora = st.radio("Monitora calorias?", list(mapa_sim_nao.keys()), horizontal=True)
-    val_monitora = mapa_sim_nao[label_monitora]
+# --- BOTÃO DE PREDIÇÃO ---
+st.markdown("###")
+if st.button("Realizar Predição", type="primary"):
+    if model is not None:
+        # Exibir os dados brutos para conferência (opcional, bom para debug)
+        with st.expander("Visualizar dados enviados ao modelo"):
+            st.dataframe(input_df)
 
-    label_historico = st.radio("Histórico familiar de obesidade?", list(mapa_sim_nao.keys()), horizontal=True)
-    val_historico = mapa_sim_nao[label_historico]
-    
-    st.markdown("---")
-    st.subheader("Estilo de Vida")
+        # Fazer a predição
+        prediction = model.predict(input_df)
+        probability = model.predict_proba(input_df)
 
-    label_come_fora = st.selectbox("Comer fora de hora/refeição:", list(mapa_frequencia_geral.keys()))
-    val_come_fora = mapa_frequencia_geral[label_come_fora]
+        # Resultado
+        st.markdown("---")
+        st.subheader("Resultado da Análise")
 
-    label_alcool = st.selectbox("Consumo de álcool:", list(mapa_frequencia_geral.keys()))
-    val_alcool = mapa_frequencia_geral[label_alcool]
-
-    label_transporte = st.selectbox("Principal transporte:", list(mapa_transporte.keys()))
-    val_transporte = mapa_transporte[label_transporte]
-
-    # ==============================================================================
-    # SEÇÃO 3: PROCESSAMENTO E PREDIÇÃO
-    # ==============================================================================
-    
-    st.markdown("---")
-    
-    if st.button("Calcular Risco"):
-        if modelo is None:
-            st.error("Erro: Modelo não carregado. Verifique o link do GitHub no código.")
+        # O modelo retorna 0 (Sem risco imediato) ou 1 (Risco de obesidade)
+        # conforme definido na função calcular_risco do notebook
+        if prediction[0] == 1:
+            st.error(f"⚠️ **Risco de Obesidade Identificado**")
+            st.write(f"Probabilidade estimada: **{probability[0][1] * 100:.2f}%**")
+            st.warning("Recomenda-se procurar orientação médica e nutricional para ajustes de hábitos.")
         else:
-            # 1. CÁLCULO DO IMC (Feature Engineering)
-            # O modelo exige 'imc', então calculamos aqui
-            imc_calculado = peso / (altura ** 2)
-
-            # 2. MONTAGEM DOS DADOS (Usando os nomes exatos do erro)
-            dados_entrada = {
-                "genero": [val_genero],
-                "idade": [idade],
-                "imc": [imc_calculado],  # Aqui entra o IMC calculado
-                "b_historico_familiar": [val_historico],
-                "b_come_alimentos_caloricos": [val_caloricos],
-                "qtd_vegetais": [val_vegetais],
-                "qtd_refeicao": [val_refeicao],
-                "freq_come_fora_refeicao": [val_come_fora],
-                "b_fuma": [val_fuma],
-                "qtd_agua": [val_agua],
-                "b_monitora_calorias": [val_monitora],
-                "qtd_atv_fisicas": [val_atv],
-                "qtd_tmp_na_internet": [val_internet],
-                "freq_alcool": [val_alcool],
-                "meio_de_transporte": [val_transporte]
-            }
-
-            df_input = pd.DataFrame(dados_entrada)
-
-            # 3. ORDENAÇÃO DAS COLUNAS
-            # Garante que a ordem é igual à lista que apareceu no erro
-            colunas_ordenadas = [
-                'genero', 'idade', 'imc', 
-                'b_historico_familiar', 'b_come_alimentos_caloricos', 
-                'qtd_vegetais', 'qtd_refeicao', 'freq_come_fora_refeicao', 
-                'b_fuma', 'qtd_agua', 'b_monitora_calorias', 
-                'qtd_atv_fisicas', 'qtd_tmp_na_internet', 
-                'freq_alcool', 'meio_de_transporte'
-            ]
-            
-            try:
-                # Reordena
-                df_input = df_input[colunas_ordenadas]
-                
-                # Predição
-                predicao = modelo.predict(df_input)
-                
-                # Mapeamento do Resultado
-                # ATENÇÃO: Verifique se essa ordem (0 a 6) bate com o seu LabelEncoder do notebook
-                mapa_resultado = {
-                    0: "Peso Insuficiente",
-                    1: "Peso Normal",
-                    2: "Sobrepeso Nível I",
-                    3: "Sobrepeso Nível II",
-                    4: "Obesidade Tipo I",
-                    5: "Obesidade Tipo II",
-                    6: "Obesidade Tipo III"
-                }
-                
-                resultado_texto = mapa_resultado.get(predicao[0], f"Classe {predicao[0]}")
-                
-                st.success(f"Resultado da Análise: **{resultado_texto}**")
-                st.info(f"IMC Calculado: {imc_calculado:.2f}")
-
-            except Exception as e:
-                st.error(f"Erro na predição: {e}")
-                st.write("Dados enviados:")
-                st.dataframe(df_input)
-
-if __name__ == "__main__":
-    main()
+            st.success(f"✅ **Sem Risco Imediato de Obesidade**")
+            st.write(f"Probabilidade de risco: **{probability[0][1] * 100:.2f}%**")
+            st.info("Continue mantendo hábitos saudáveis!")
+    else:
+        st.warning("Modelo não carregado. Verifique o arquivo .joblib")
