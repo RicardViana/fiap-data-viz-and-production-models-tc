@@ -4,6 +4,7 @@ import joblib
 import numpy as np
 import requests
 import io
+import unicodedata # Nova importação para lidar com acentos
 
 # Configuração da Página
 st.set_page_config(
@@ -11,6 +12,18 @@ st.set_page_config(
     page_icon="🩺",
     layout="centered"
 )
+
+# --- FUNÇÃO AUXILIAR PARA ORDENAÇÃO CORRETA (PT-BR) ---
+def ordenar_opcoes(lista):
+    """
+    Ordena uma lista de strings ignorando acentos e maiúsculas.
+    Ex: Faz 'Às vezes' vir antes de 'Raramente'.
+    """
+    def normalizar(texto):
+        # Transforma 'Às vezes' em 'as vezes' para fins de comparação
+        return unicodedata.normalize('NFKD', texto).encode('ASCII', 'ignore').decode('utf-8').lower()
+    
+    return sorted(lista, key=normalizar)
 
 # --- FUNÇÃO PARA CARREGAR O MODELO ---
 @st.cache_resource
@@ -21,7 +34,7 @@ def load_model():
     except FileNotFoundError:
         pass
 
-    # 2. Se não encontrar, tenta baixar do GitHub (ajuste o link se necessário)
+    # 2. Tenta baixar do GitHub (Ajuste o link se necessário)
     url_modelo = "https://github.com/RicardViana/fiap-data-viz-and-production-models-tc/raw/refs/heads/main/models/modelo_risco_obesidade_random_forest.joblib"
     
     try:
@@ -54,8 +67,8 @@ def user_input_features():
         altura = st.number_input("Altura (m)", min_value=1.0, max_value=2.5, value=1.70)
     
     with col2:
-        # Gênero com ordem alfabética (Feminino, Masculino)
-        genero_label = st.selectbox("Gênero", sorted(["Masculino", "Feminino"]))
+        # Usando a nova função de ordenação
+        genero_label = st.selectbox("Gênero", ordenar_opcoes(["Masculino", "Feminino"]))
         peso = st.number_input("Peso (kg)", min_value=30.0, max_value=200.0, value=70.0)
 
     imc = int(np.ceil(peso / (altura ** 2)))
@@ -94,33 +107,32 @@ def user_input_features():
         '3': 'Tres_refeicoes_principais_por_dia',
         '4+': 'Quatro_ou_mais_refeicoes_principais_por_dia'
     }
-    # Ordenação Alfabética aplicada
+    # Aqui mantemos sorted() simples pois são números
     refeicao_key = st.selectbox("Quantas refeições principais por dia?", options=sorted(['1', '2', '3', '4+']))
     qtd_refeicao = mapa_refeicoes[refeicao_key]
 
-    # Qtd Vegetais
+    # Qtd Vegetais (AQUI ESTAVA O PROBLEMA)
     mapa_vegetais = {'Raramente': 'Raramente', 'Às vezes': 'As_vezes', 'Sempre': 'Sempre'}
-    # Ordenação Alfabética aplicada (Às vezes, Raramente, Sempre)
-    veg_key = st.selectbox("Consumo de vegetais nas refeições?", options=sorted(['Raramente', 'Às vezes', 'Sempre']))
+    # Agora usamos ordenar_opcoes para corrigir o "Às vezes"
+    veg_key = st.selectbox("Consumo de vegetais nas refeições?", options=ordenar_opcoes(['Raramente', 'Às vezes', 'Sempre']))
     qtd_vegetais = mapa_vegetais[veg_key]
 
     # Qtd Água
     mapa_agua = {'< 1 Litro': 'Baixo_consumo', '1-2 Litros': 'Consumo_adequado', '> 2 Litros': 'Alto_consumo'}
-    # Ordenação Alfabética aplicada
     agua_key = st.selectbox("Consumo diário de água?", options=sorted(['< 1 Litro', '1-2 Litros', '> 2 Litros']))
     qtd_agua = mapa_agua[agua_key]
 
     col_alim1, col_alim2 = st.columns(2)
     with col_alim1:
         mapa_fora_hora = {'Não': 'no', 'Às vezes': 'Sometimes', 'Frequentemente': 'Frequently', 'Sempre': 'Always'}
-        # Ordenação Alfabética aplicada
-        fora_key = st.selectbox("Come entre as refeições?", options=sorted(list(mapa_fora_hora.keys())))
+        # Usando ordenar_opcoes aqui também
+        fora_key = st.selectbox("Come entre as refeições?", options=ordenar_opcoes(list(mapa_fora_hora.keys())))
         freq_come_fora_refeicao = mapa_fora_hora[fora_key]
 
     with col_alim2:
         mapa_alcool = {'Não': 'no', 'Às vezes': 'Sometimes', 'Frequentemente': 'Frequently', 'Sempre': 'Always'}
-        # Ordenação Alfabética aplicada
-        alcool_key = st.selectbox("Consome álcool?", options=sorted(list(mapa_alcool.keys())))
+        # Usando ordenar_opcoes aqui também
+        alcool_key = st.selectbox("Consome álcool?", options=ordenar_opcoes(list(mapa_alcool.keys())))
         freq_alcool = mapa_alcool[alcool_key]
 
     st.markdown("---")
@@ -130,14 +142,13 @@ def user_input_features():
 
     # Atividade Física
     mapa_atv = {'Sedentário': 'Sedentario', 'Baixa': 'Baixa_frequencia', 'Moderada': 'Moderada_frequencia', 'Alta': 'Alta_frequencia'}
-    # Ordenação Alfabética aplicada (Alta, Baixa, Moderada, Sedentário)
-    atv_key = st.selectbox("Frequência de atividade física?", options=sorted(list(mapa_atv.keys())))
+    atv_key = st.selectbox("Frequência de atividade física?", options=ordenar_opcoes(list(mapa_atv.keys())))
     qtd_atv_fisicas = mapa_atv[atv_key]
 
     # Tempo na Internet
     mapa_net = {'Baixo (0-2h)': 'Uso_baixo', 'Moderado (3-5h)': 'Uso_moderado', 'Intenso (>5h)': 'Uso_intenso'}
-    # Ordenação Alfabética aplicada
-    net_key = st.selectbox("Tempo em dispositivos eletrônicos?", options=sorted(list(mapa_net.keys())))
+    # Aqui sorted normal funciona bem pois B, I, M não tem acentos no início
+    net_key = st.selectbox("Tempo em dispositivos eletrônicos?", options=ordenar_opcoes(list(mapa_net.keys())))
     qtd_tmp_na_internet = mapa_net[net_key]
 
     # Transporte
@@ -148,11 +159,10 @@ def user_input_features():
         'Bicicleta': 'Bike', 
         'Moto': 'Motorbike'
     }
-    # Ordenação Alfabética aplicada
-    transporte_key = st.selectbox("Meio de transporte principal?", options=sorted(list(mapa_transporte.keys())))
+    transporte_key = st.selectbox("Meio de transporte principal?", options=ordenar_opcoes(list(mapa_transporte.keys())))
     meio_de_transporte = mapa_transporte[transporte_key]
 
-    # Montagem do DataFrame (ordem idêntica ao notebook)
+    # Montagem do DataFrame
     data = {
         'idade': idade,
         'genero': genero,
