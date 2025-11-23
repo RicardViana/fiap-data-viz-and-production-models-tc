@@ -7,15 +7,15 @@ import pandas as pd
 import requests
 import streamlit as st
 
-# CONFIGURAÇÃO DA PÁGINA 
+# CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(
     page_title="Predição de Risco de Obesidade",
     page_icon="🩺",
     layout="centered"
 )
 
-# DEFINIÇÃO DE FUNÇÕES
 
+# DEFINIÇÃO DE FUNÇÕES
 def ordenar_opcoes(lista):
     """
     Ordena uma lista de strings ignorando acentos e maiúsculas.
@@ -28,7 +28,6 @@ def ordenar_opcoes(lista):
     return sorted(lista, key=normalizar)
 
 @st.cache_resource
-
 def load_model():
     """
     Carrega o modelo treinado (.joblib) localmente ou via GitHub.
@@ -39,7 +38,7 @@ def load_model():
     except FileNotFoundError:
         pass
 
-    # Tentativa Remota (GitHub Raw)
+    # Tentativa Remota (GitHub)
     url_modelo = "https://github.com/RicardViana/fiap-data-viz-and-production-models-tc/raw/refs/heads/main/models/modelo_risco_obesidade_random_forest.joblib"
     
     try:
@@ -51,6 +50,44 @@ def load_model():
     
     return None
 
+def configurar_sidebar():
+    """
+    Configura o conteúdo da barra lateral (Sobre, Equipe, Links).
+    """
+    with st.sidebar:
+        st.header("📌 Sobre o Projeto")
+        
+        st.info(
+            """
+            Este aplicativo e modelo foi desenvolvido como parte da entrega do **Tech Challenge** da **Fase 4** sobre **Data Viz and Production Models**.
+            
+            🎓 **Curso:** Pós-Graduação em Data Analytics  
+            🏫 **Instituição:** FIAP + Alurr
+            """
+        )
+        
+        st.markdown("---")
+        
+        st.subheader("👨‍💻 Equipe de Desenvolvimento")
+        
+        membros = [
+            {"nome": "Elton José Araujo Silva", "link": "https://www.linkedin.com/in/elton-araujo-silva/"},
+            {"nome": "Leonardo Fajoli Formigon", "link": "https://www.linkedin.com/in/leonardo-formigon-63052320b/"}, 
+            {"nome": "Lucas Augusto Fernandes de Lira", "link": "https://www.linkedin.com/in/lucas--lira-/"},
+            {"nome": "Mariana Domingues Brandão", "link": "https://www.linkedin.com/in/maridbrandao"},
+            {"nome": "Ricardo Vieira Viana", "link": "https://www.linkedin.com/in/ricardvviana"}
+
+        ]
+        
+        for membro in membros:
+            st.markdown(f"• [{membro['nome']}]({membro['link']})")
+            
+        st.markdown("---")
+        
+        st.subheader("📂 Código Fonte")
+        st.markdown("Acesse o repositório completo do projeto:")
+        st.link_button("🔗 Ver no GitHub", "https://github.com/RicardViana/fiap-data-viz-and-production-models-tc")
+
 def get_user_input_features():
     """
     Coleta os dados do usuário no corpo principal da página e retorna um DataFrame.
@@ -58,7 +95,7 @@ def get_user_input_features():
     
     # DADOS PESSOAIS
     st.header("1. Dados Pessoais")
-    st.markdown("Inicie informando as características físicas básicas")
+    st.markdown("Inicie informando as características físicas básicas.")
     
     col1, col2 = st.columns(2)
     
@@ -70,11 +107,10 @@ def get_user_input_features():
         genero_label = st.selectbox("Gênero", ordenar_opcoes(["Masculino", "Feminino"]))
         peso = st.number_input("Peso (kg)", min_value=30.0, max_value=200.0, value=70.0)
 
-    # Cálculo de IMC e Gênero (Lógica)
+    # Cálculo de IMC e Gênero
     imc = int(np.ceil(peso / (altura ** 2)))
     genero = 1 if genero_label == "Feminino" else 0
     
-    # Exibe o IMC calculado visualmente
     st.info(f"ℹ️ **IMC Calculado:** {imc} kg/m²")
     st.markdown("---")
 
@@ -91,7 +127,6 @@ def get_user_input_features():
         caloricos = st.radio("Consome alimentos calóricos frequentemente?", ["Sim", "Não"], horizontal=True)
         monitora = st.radio("Costuma monitorar as calorias ingeridas?", ["Sim", "Não"], horizontal=True)
 
-    # Mapeamento Binário
     b_historico_familiar = 1 if historico == "Sim" else 0
     b_fuma = 1 if fuma == "Sim" else 0
     b_come_alimentos_caloricos = 1 if caloricos == "Sim" else 0
@@ -102,7 +137,6 @@ def get_user_input_features():
     # HÁBITOS ALIMENTARES
     st.header("3. Hábitos Alimentares")
 
-    # Mapeamentos (Dicionários)
     mapa_refeicoes = {
         '1': 'Uma_refeicao_principal_por_dia',
         '2': 'Duas_refeicoes_principais_por_dia',
@@ -140,7 +174,6 @@ def get_user_input_features():
             options=ordenar_opcoes(list(mapa_alcool.keys()))
         )
 
-    # Atribuição dos valores
     qtd_refeicao = mapa_refeicoes[refeicao_key]
     qtd_vegetais = mapa_vegetais[veg_key]
     qtd_agua = mapa_agua[agua_key]
@@ -193,7 +226,6 @@ def get_user_input_features():
     qtd_tmp_na_internet = mapa_net[net_key]
     meio_de_transporte = mapa_transporte[transporte_key]
 
-    # Monta o DataFrame Final
     data = {
         'idade': idade,
         'genero': genero,
@@ -214,39 +246,39 @@ def get_user_input_features():
     
     return pd.DataFrame(data, index=[0])
 
-# FUNÇÃO PRINCIPAL (EXECUÇÃO)
+
+# FUNÇÃO PRINCIPAL
 
 def main():
-    # Carrega o modelo no início
+    # Configura a Barra Lateral
+    configurar_sidebar()
+
+    # Carrega o Modelo
     model = load_model()
 
-    # Título e Descrição
+    # Corpo Principal
     st.title("🩺 Análise de Risco de Obesidade")
     st.markdown("""
     Preencha o formulário abaixo com os dados do paciente.
-    O sistema utilizará modelo de Machine Learning para calcular a probabilidade de risco de obesidade.
+    O sistema utilizará Machine Learnibng para calcular a probabilidade de risco de obesidade.
     """)
     st.markdown("---")
 
-    # Coleta os dados (Formulário no corpo da página)
+    # 4. Formulário
     input_df = get_user_input_features()
 
-    # Botão de Predição
+    # 5. Botão e Predição
     st.markdown("###")
     
-    # Cria um container para o botão ficar centralizado ou destacado (opcional, aqui está padrão)
     if st.button("🔍 Realizar Predição", type="primary", use_container_width=True):
         if model is not None:
             try:
-                # Faz a predição
                 prediction = model.predict(input_df)
                 probability = model.predict_proba(input_df)
 
-                # Exibe o resultado
                 st.markdown("---")
                 st.header("Resultado da Análise")
 
-                # Lógica de exibição baseada na classe prevista (0 ou 1)
                 if prediction[0] == 1:
                     st.error("⚠️ **ALTO RISCO DE OBESIDADE IDENTIFICADO**")
                     st.metric(label="Probabilidade de Risco", value=f"{probability[0][1] * 100:.1f}%")
@@ -259,8 +291,7 @@ def main():
             except Exception as e:
                 st.error(f"Ocorreu um erro técnico ao realizar a predição: {e}")
         else:
-            st.error("⚠️ O modelo de Machine Learning não foi carregado corretamente. Verifique os arquivos.")
+            st.error("⚠️ O modelo de Inteligência Artificial não foi carregado corretamente. Verifique os arquivos.")
 
-# Ponto de entrada do script
 if __name__ == "__main__":
     main()
