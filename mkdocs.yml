@@ -1,7 +1,24 @@
 site_name: Modelo ML para prever obesidade
-# 
+
 site_author: grupo 63 FIAP Fase 4
-# 
+
 nav:
   - Início: index.md
   - Modelagem e Algoritmos: modelagem.md
+
+theme:
+  name: material
+  palette:
+    # Configuração para o modo claro
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7 
+        name: Mudar para modo escuro
+
+    # Configuração para o modo escuro
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Mudar para modo claro
