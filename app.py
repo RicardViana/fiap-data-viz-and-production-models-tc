@@ -7,7 +7,7 @@ import pandas as pd
 import requests
 import streamlit as st
 
-# --- CONFIGURAÇÃO DA PÁGINA (Deve ser o primeiro comando Streamlit) ---
+# --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(
     page_title="Predição de Risco de Obesidade",
     page_icon="🩺",
@@ -19,8 +19,7 @@ st.set_page_config(
 
 def ordenar_opcoes(lista):
     """
-    Ordena uma lista de strings ignorando acentos e maiúsculas para exibição correta.
-    Exemplo: Faz 'Às vezes' vir antes de 'Raramente'.
+    Ordena uma lista de strings ignorando acentos e maiúsculas.
     """
     def normalizar(texto):
         if isinstance(texto, str):
@@ -33,8 +32,7 @@ def ordenar_opcoes(lista):
 @st.cache_resource
 def load_model():
     """
-    Carrega o modelo treinado (.joblib).
-    Tenta carregar localmente primeiro, depois via URL do GitHub.
+    Carrega o modelo treinado (.joblib) localmente ou via GitHub.
     """
     # 1. Tentativa Local
     try:
@@ -44,7 +42,7 @@ def load_model():
 
     # 2. Tentativa Remota (GitHub Raw)
     # ATENÇÃO: Substitua pelo link 'Raw' do seu repositório
-    url_modelo = "https://raw.githubusercontent.com/SEU_USUARIO/NOME_REPO/main/modelo_risco_obesidade_random_forest.joblib"
+    url_modelo = "https://github.com/RicardViana/fiap-data-viz-and-production-models-tc/raw/refs/heads/main/models/modelo_risco_obesidade_random_forest.joblib"
     
     try:
         response = requests.get(url_modelo)
@@ -58,14 +56,15 @@ def load_model():
 
 def get_user_input_features():
     """
-    Cria a barra lateral, coleta os dados do usuário e retorna um DataFrame.
+    Coleta os dados do usuário no corpo principal da página e retorna um DataFrame.
     """
-    st.sidebar.header("Dados do Paciente")
-
-    # --- 1. Dados Pessoais ---
-    st.sidebar.subheader("1. Dados Pessoais")
     
-    col1, col2 = st.sidebar.columns(2)
+    # --- SEÇÃO 1: DADOS PESSOAIS ---
+    st.header("1. Dados Pessoais")
+    st.markdown("Inicie informando as características físicas básicas.")
+    
+    col1, col2 = st.columns(2)
+    
     with col1:
         idade = st.number_input("Idade", min_value=10, max_value=100, value=25)
         altura = st.number_input("Altura (m)", min_value=1.0, max_value=2.5, value=1.70)
@@ -74,20 +73,26 @@ def get_user_input_features():
         genero_label = st.selectbox("Gênero", ordenar_opcoes(["Masculino", "Feminino"]))
         peso = st.number_input("Peso (kg)", min_value=30.0, max_value=200.0, value=70.0)
 
-    # Cálculo de IMC e Gênero
+    # Cálculo de IMC e Gênero (Lógica)
     imc = int(np.ceil(peso / (altura ** 2)))
     genero = 1 if genero_label == "Feminino" else 0
     
-    st.sidebar.info(f"IMC Calculado: {imc}")
-    st.sidebar.markdown("---")
+    # Exibe o IMC calculado visualmente
+    st.info(f"ℹ️ **IMC Calculado:** {imc} kg/m²")
+    st.markdown("---")
 
-    # --- 2. Histórico e Hábitos Binários ---
-    st.sidebar.subheader("2. Histórico e Monitoramento")
+    # --- SEÇÃO 2: HISTÓRICO E HÁBITOS ---
+    st.header("2. Histórico e Monitoramento")
     
-    historico = st.sidebar.radio("Histórico familiar de sobrepeso?", ["Sim", "Não"], horizontal=True)
-    fuma = st.sidebar.radio("Você fuma?", ["Sim", "Não"], horizontal=True)
-    caloricos = st.sidebar.radio("Consome alimentos calóricos frequentemente?", ["Sim", "Não"], horizontal=True)
-    monitora = st.sidebar.radio("Monitora calorias ingeridas?", ["Sim", "Não"], horizontal=True)
+    col_h1, col_h2 = st.columns(2)
+    
+    with col_h1:
+        historico = st.radio("Possui histórico familiar de sobrepeso?", ["Sim", "Não"], horizontal=True)
+        fuma = st.radio("Você fuma?", ["Sim", "Não"], horizontal=True)
+    
+    with col_h2:
+        caloricos = st.radio("Consome alimentos calóricos frequentemente?", ["Sim", "Não"], horizontal=True)
+        monitora = st.radio("Costuma monitorar as calorias ingeridas?", ["Sim", "Não"], horizontal=True)
 
     # Mapeamento Binário
     b_historico_familiar = 1 if historico == "Sim" else 0
@@ -95,12 +100,12 @@ def get_user_input_features():
     b_come_alimentos_caloricos = 1 if caloricos == "Sim" else 0
     b_monitora_calorias = 1 if monitora == "Sim" else 0
 
-    st.sidebar.markdown("---")
+    st.markdown("---")
 
-    # --- 3. Hábitos Alimentares ---
-    st.sidebar.subheader("3. Hábitos Alimentares")
+    # --- SEÇÃO 3: HÁBITOS ALIMENTARES ---
+    st.header("3. Hábitos Alimentares")
 
-    # Mapeamentos
+    # Mapeamentos (Dicionários)
     mapa_refeicoes = {
         '1': 'Uma_refeicao_principal_por_dia',
         '2': 'Duas_refeicoes_principais_por_dia',
@@ -112,43 +117,43 @@ def get_user_input_features():
     mapa_fora_hora = {'Não': 'no', 'Às vezes': 'Sometimes', 'Frequentemente': 'Frequently', 'Sempre': 'Always'}
     mapa_alcool = {'Não': 'no', 'Às vezes': 'Sometimes', 'Frequentemente': 'Frequently', 'Sempre': 'Always'}
 
-    # Inputs com Selectbox e Ordenação
-    refeicao_key = st.sidebar.selectbox(
-        "Quantas refeições principais por dia?", 
-        options=sorted(['1', '2', '3', '4+'])
-    )
-    
-    veg_key = st.sidebar.selectbox(
-        "Consumo de vegetais nas refeições?", 
-        options=ordenar_opcoes(['Raramente', 'Às vezes', 'Sempre'])
-    )
-    
-    agua_key = st.sidebar.selectbox(
-        "Consumo diário de água?", 
-        options=ordenar_opcoes(['< 1 Litro', '1-2 Litros', '> 2 Litros'])
-    )
-    
-    fora_key = st.sidebar.selectbox(
-        "Come entre as refeições?", 
-        options=ordenar_opcoes(list(mapa_fora_hora.keys()))
-    )
-    
-    alcool_key = st.sidebar.selectbox(
-        "Consome álcool?", 
-        options=ordenar_opcoes(list(mapa_alcool.keys()))
-    )
+    col_alim1, col_alim2 = st.columns(2)
 
-    # Atribuição dos valores mapeados
+    with col_alim1:
+        refeicao_key = st.selectbox(
+            "Quantas refeições principais faz por dia?", 
+            options=sorted(['1', '2', '3', '4+'])
+        )
+        veg_key = st.selectbox(
+            "Frequência de consumo de vegetais?", 
+            options=ordenar_opcoes(['Raramente', 'Às vezes', 'Sempre'])
+        )
+        agua_key = st.selectbox(
+            "Consumo diário de água?", 
+            options=ordenar_opcoes(['< 1 Litro', '1-2 Litros', '> 2 Litros'])
+        )
+
+    with col_alim2:
+        fora_key = st.selectbox(
+            "Costuma comer entre as refeições?", 
+            options=ordenar_opcoes(list(mapa_fora_hora.keys()))
+        )
+        alcool_key = st.selectbox(
+            "Consome bebidas alcoólicas?", 
+            options=ordenar_opcoes(list(mapa_alcool.keys()))
+        )
+
+    # Atribuição dos valores
     qtd_refeicao = mapa_refeicoes[refeicao_key]
     qtd_vegetais = mapa_vegetais[veg_key]
     qtd_agua = mapa_agua[agua_key]
     freq_come_fora_refeicao = mapa_fora_hora[fora_key]
     freq_alcool = mapa_alcool[alcool_key]
 
-    st.sidebar.markdown("---")
+    st.markdown("---")
 
-    # --- 4. Estilo de Vida ---
-    st.sidebar.subheader("4. Estilo de Vida")
+    # --- SEÇÃO 4: ESTILO DE VIDA ---
+    st.header("4. Estilo de Vida")
 
     mapa_atv = {
         'Sedentário': 'Sedentario', 
@@ -169,26 +174,29 @@ def get_user_input_features():
         'Moto': 'Motorbike'
     }
 
-    atv_key = st.sidebar.selectbox(
-        "Frequência de atividade física?", 
-        options=ordenar_opcoes(list(mapa_atv.keys()))
-    )
-    
-    net_key = st.sidebar.selectbox(
-        "Tempo em dispositivos eletrônicos?", 
-        options=ordenar_opcoes(list(mapa_net.keys()))
-    )
-    
-    transporte_key = st.sidebar.selectbox(
-        "Meio de transporte principal?", 
-        options=ordenar_opcoes(list(mapa_transporte.keys()))
-    )
+    col_estilo1, col_estilo2 = st.columns(2)
+
+    with col_estilo1:
+        atv_key = st.selectbox(
+            "Frequência de atividade física?", 
+            options=ordenar_opcoes(list(mapa_atv.keys()))
+        )
+        net_key = st.selectbox(
+            "Tempo diário em dispositivos eletrônicos?", 
+            options=ordenar_opcoes(list(mapa_net.keys()))
+        )
+
+    with col_estilo2:
+        transporte_key = st.selectbox(
+            "Meio de transporte principal?", 
+            options=ordenar_opcoes(list(mapa_transporte.keys()))
+        )
 
     qtd_atv_fisicas = mapa_atv[atv_key]
     qtd_tmp_na_internet = mapa_net[net_key]
     meio_de_transporte = mapa_transporte[transporte_key]
 
-    # Dicionário de dados para o DataFrame
+    # Monta o DataFrame Final
     data = {
         'idade': idade,
         'genero': genero,
@@ -210,47 +218,52 @@ def get_user_input_features():
     return pd.DataFrame(data, index=[0])
 
 
-# --- EXECUÇÃO DO APP ---
+# --- FUNÇÃO PRINCIPAL (EXECUÇÃO) ---
 
 def main():
-    # Carregamento do Modelo
+    # Carrega o modelo no início
     model = load_model()
 
-    # Layout Principal
+    # Título e Descrição
     st.title("🩺 Análise de Risco de Obesidade")
-    st.write("Este aplicativo utiliza Machine Learning para prever se um paciente possui alto risco de obesidade.")
+    st.markdown("""
+    Preencha o formulário abaixo com os dados do paciente.
+    O sistema utilizará Inteligência Artificial para calcular a probabilidade de risco de obesidade.
+    """)
     st.markdown("---")
 
-    # Captura dos dados da Sidebar
+    # Coleta os dados (Formulário no corpo da página)
     input_df = get_user_input_features()
-
-    # Exibição do resumo dos dados (opcional, para conferência do usuário)
-    with st.expander("Ver dados selecionados"):
-        st.dataframe(input_df)
 
     # Botão de Predição
     st.markdown("###")
-    if st.button("Realizar Predição", type="primary"):
+    
+    # Cria um container para o botão ficar centralizado ou destacado (opcional, aqui está padrão)
+    if st.button("🔍 Realizar Predição", type="primary", use_container_width=True):
         if model is not None:
             try:
+                # Faz a predição
                 prediction = model.predict(input_df)
                 probability = model.predict_proba(input_df)
 
+                # Exibe o resultado
                 st.markdown("---")
-                st.subheader("Resultado da Análise")
+                st.header("Resultado da Análise")
 
+                # Lógica de exibição baseada na classe prevista (0 ou 1)
                 if prediction[0] == 1:
-                    st.error("⚠️ **Risco de Obesidade Identificado**")
-                    st.write(f"Probabilidade estimada: **{probability[0][1] * 100:.2f}%**")
-                    st.warning("Recomenda-se procurar orientação médica e nutricional.")
+                    st.error("⚠️ **ALTO RISCO DE OBESIDADE IDENTIFICADO**")
+                    st.metric(label="Probabilidade de Risco", value=f"{probability[0][1] * 100:.1f}%")
+                    st.warning("👉 **Recomendação:** Sugere-se encaminhamento para orientação médica e nutricional especializada.")
                 else:
-                    st.success("✅ **Sem Risco Imediato de Obesidade**")
-                    st.write(f"Probabilidade de risco: **{probability[0][1] * 100:.2f}%**")
-                    st.info("Continue mantendo hábitos saudáveis!")
+                    st.success("✅ **BAIXO RISCO IMEDIATO**")
+                    st.metric(label="Probabilidade de Risco", value=f"{probability[0][1] * 100:.1f}%")
+                    st.info("👉 **Recomendação:** Continue mantendo hábitos saudáveis e acompanhamento regular.")
+            
             except Exception as e:
-                st.error(f"Ocorreu um erro ao realizar a predição: {e}")
+                st.error(f"Ocorreu um erro técnico ao realizar a predição: {e}")
         else:
-            st.error("Modelo não carregado. Verifique o arquivo .joblib no repositório.")
+            st.error("⚠️ O modelo de Inteligência Artificial não foi carregado corretamente. Verifique os arquivos.")
 
 # Ponto de entrada do script
 if __name__ == "__main__":
