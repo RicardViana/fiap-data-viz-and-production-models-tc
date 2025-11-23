@@ -11,16 +11,20 @@ import streamlit as st
 
 # CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(
-    page_title="Predição de Risco de Obesidade",
-    page_icon="🩺",
-    layout="centered"
+    page_title="Predição de Risco de Obesidade", # Nome que vai aparecer na página do navegador
+    page_icon="🩺", # Icone da página
+    layout="centered" # Tipo do layout da pagina
 )
 
 # DEFINIÇÃO DE FUNÇÕES
+
+# Ordenar dados
 def ordenar_opcoes(lista):
+
     """
-    Ordena uma lista de strings ignorando acentos e maiúsculas.
+    Ordena uma lista de strings ignorando acentos e maiúsculas
     """
+
     def normalizar(texto):
         if isinstance(texto, str):
             return unicodedata.normalize('NFKD', texto).encode('ASCII', 'ignore').decode('utf-8').lower()
@@ -28,11 +32,16 @@ def ordenar_opcoes(lista):
     
     return sorted(lista, key=normalizar)
 
-@st.cache_resource
+# Salvar o modelo em cache
+@st.cache_resource 
+
+# Carregar o modelo
 def load_model():
+
     """
-    Carrega o modelo treinado (.joblib) localmente ou via GitHub.
+    Carrega o modelo treinado (.joblib) localmente ou via GitHub
     """
+
     # Tentativa Local
     try:
         return joblib.load('modelo_risco_obesidade_random_forest.joblib')
@@ -51,10 +60,13 @@ def load_model():
     
     return None
 
+# Configurar o barre lateral
 def configurar_sidebar():
+
     """
-    Configura o conteúdo da barra lateral (Sobre, Equipe, Links).
+    Configura o conteúdo da barra lateral (Sobre, Equipe, Links)
     """
+
     with st.sidebar:
         st.header("📌 Sobre o Projeto")
         
@@ -89,14 +101,16 @@ def configurar_sidebar():
         st.markdown("Acesse o repositório completo do projeto:")
         st.link_button("🔗 Ver no GitHub", "https://github.com/RicardViana/fiap-data-viz-and-production-models-tc")
 
+# Coletar os dados do questionario
 def get_user_input_features():
+
     """
-    Coleta os dados do usuário no corpo principal da página e retorna um DataFrame.
+    Coleta os dados do usuário no corpo principal da página e retorna um DataFrame
     """
     
     # DADOS PESSOAIS
     st.header("1. Dados Pessoais")
-    st.markdown("Inicie informando as características físicas básicas.")
+    st.markdown("Inicie informando as características físicas básicas")
     
     col1, col2 = st.columns(2)
     
@@ -158,21 +172,21 @@ def get_user_input_features():
         )
         veg_key = st.selectbox(
             "Frequência de consumo de vegetais?", 
-            options=ordenar_opcoes(['Raramente', 'Às vezes', 'Sempre'])
+            options=['Raramente', 'Às vezes', 'Sempre']
         )
         agua_key = st.selectbox(
             "Consumo diário de água?", 
-            options=ordenar_opcoes(['< 1 Litro', '1-2 Litros', '> 2 Litros'])
+            options=['< 1 Litro', '1-2 Litros', '> 2 Litros']
         )
 
     with col_alim2:
         fora_key = st.selectbox(
             "Costuma comer entre as refeições?", 
-            options=ordenar_opcoes(list(mapa_fora_hora.keys()))
+            options=list(mapa_fora_hora.keys())
         )
         alcool_key = st.selectbox(
             "Consome bebidas alcoólicas?", 
-            options=ordenar_opcoes(list(mapa_alcool.keys()))
+            options=list(mapa_alcool.keys())
         )
 
     qtd_refeicao = mapa_refeicoes[refeicao_key]
@@ -210,11 +224,11 @@ def get_user_input_features():
     with col_estilo1:
         atv_key = st.selectbox(
             "Frequência de atividade física?", 
-            options=ordenar_opcoes(list(mapa_atv.keys()))
+            options=list(mapa_atv.keys())
         )
         net_key = st.selectbox(
             "Tempo diário em dispositivos eletrônicos?", 
-            options=ordenar_opcoes(list(mapa_net.keys()))
+            options=list(mapa_net.keys())
         )
 
     with col_estilo2:
@@ -247,9 +261,9 @@ def get_user_input_features():
     
     return pd.DataFrame(data, index=[0])
 
-# FUNÇÃO PRINCIPAL
-
+# Função princial
 def main():
+
     # Configura a Barra Lateral
     configurar_sidebar()
 
@@ -260,7 +274,7 @@ def main():
     st.title("🩺 Análise de Risco de Obesidade")
     st.markdown("""
     Preencha o formulário abaixo com os dados do paciente.
-    O sistema utilizará Machine Learning  para calcular a probabilidade de risco de obesidade.
+    O sistema utilizará Machine Learning para calcular a probabilidade de risco de obesidade.
     """)
     st.markdown("---")
 
