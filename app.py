@@ -1,6 +1,8 @@
+# Importar biblioteca completa - padrão
 import io
 import unicodedata
 
+# Importar biblioteca completa - terceiro
 import joblib
 import numpy as np
 import pandas as pd
@@ -13,7 +15,6 @@ st.set_page_config(
     page_icon="🩺",
     layout="centered"
 )
-
 
 # DEFINIÇÃO DE FUNÇÕES
 def ordenar_opcoes(lista):
@@ -246,7 +247,6 @@ def get_user_input_features():
     
     return pd.DataFrame(data, index=[0])
 
-
 # FUNÇÃO PRINCIPAL
 
 def main():
@@ -264,10 +264,10 @@ def main():
     """)
     st.markdown("---")
 
-    # 4. Formulário
+    # Formulário
     input_df = get_user_input_features()
 
-    # 5. Botão e Predição
+    # Botão e Predição
     st.markdown("###")
     
     if st.button("🔍 Realizar Predição", type="primary", use_container_width=True):
