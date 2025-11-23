@@ -1,0 +1,9 @@
+streamlit>=1.30.0
+numpy
+pandas
+matplotlib
+seaborn
+joblib
+requests
+imbalanced-learn>=0.10.0
+scikit-learn==1.7.0
