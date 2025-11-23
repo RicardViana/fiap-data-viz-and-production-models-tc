@@ -260,7 +260,7 @@ def main():
     st.title("🩺 Análise de Risco de Obesidade")
     st.markdown("""
     Preencha o formulário abaixo com os dados do paciente.
-    O sistema utilizará Machine Learnibng para calcular a probabilidade de risco de obesidade.
+    O sistema utilizará Machine Learning  para calcular a probabilidade de risco de obesidade.
     """)
     st.markdown("---")
 
