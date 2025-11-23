@@ -1,0 +1,8 @@
+site_name: Modelo ML para prever obesidade
+# 
+site_author: grupo 63 FIAP Fase 4
+# 
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Modelagem e Algoritmos: modelagem.md
