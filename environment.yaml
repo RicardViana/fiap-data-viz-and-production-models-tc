@@ -43,6 +43,3 @@ dependencies:
     
     # Aplicação
     - streamlit>=1.30.0
-    
-    # Instala o próprio projeto
-    - -e .
