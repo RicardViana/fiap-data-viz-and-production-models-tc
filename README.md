@@ -52,3 +52,8 @@ A organização de diretórios segue o padrão **Cookiecutter Data Science**:
     │   ├── predict.py          <- Script de inferência/predição
     │   └── train.py            <- Script de treinamento do modelo
     └── plots.py                <- Scripts de visualização
+```
+
+## Aplicação no Streamlit
+
+https://fiap-fase4-tc.streamlit.app/
