@@ -7,3 +7,4 @@ joblib
 requests
 imbalanced-learn>=0.10.0
 scikit-learn==1.7.0
+shap
