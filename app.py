@@ -261,27 +261,87 @@ def get_user_input_features():
     
     return pd.DataFrame(data, index=[0])
 
+def exibir_importancia_variaveis(model):
+
+    """
+    Extrai, formata e exibe as 3 variáveis mais importantes para o modelo.
+    """
+
+    # Acessar os passos do Pipeline
+    # 'preprocess' é o nome do ColumnTransformer e 'clf' é o classificador
+    preprocessor = model.named_steps['preprocess']
+    classifier = model.named_steps['clf']
+
+    # Obter os nomes das features transformadas (OneHot + Numéricas)
+    feature_names = preprocessor.get_feature_names_out()
+    
+    # Obter os valores de importância
+    importances = classifier.feature_importances_
+
+    # Criar um DataFrame para organizar
+    df_imp = pd.DataFrame({'feature': feature_names, 'importance': importances})
+    df_imp = df_imp.sort_values('importance', ascending=False).head(3)
+
+    # Dicionário para traduzir os nomes técnicos ("feature names") para Português legível
+    dicionario_traducao = {
+        'num__imc': 'Índice de Massa Corporal (IMC)',
+        'num__idade': 'Idade',
+        'bin__b_historico_familiar': 'Histórico Familiar',
+        'bin__genero': 'Gênero',
+        'bin__b_come_alimentos_caloricos': 'Consumo de Calóricos',
+        'bin__b_fuma': 'Hábito de Fumar',
+        'bin__b_monitora_calorias': 'Monitoramento de Calorias',
+        'cat__freq_come_fora_refeicao_Frequently': 'Comer entre refeições (Frequentemente)',
+        'cat__freq_come_fora_refeicao_Sometimes': 'Comer entre refeições (Às vezes)',
+        'cat__freq_come_fora_refeicao_Always': 'Comer entre refeições (Sempre)',
+        'cat__qtd_atv_fisicas_Sedentario': 'Sedentarismo',
+        'cat__qtd_atv_fisicas_Baixa_frequencia': 'Baixa Atividade Física',
+        'cat__qtd_atv_fisicas_Moderada_frequencia': 'Atividade Física Moderada',
+        'cat__qtd_agua_Baixo_consumo': 'Baixo consumo de água',
+        'cat__meio_de_transporte_Automobile': 'Uso de Carro',
+        'cat__meio_de_transporte_Public_Transportation': 'Transporte Público'
+    }
+
+    # Função para limpar o nome
+    def limpar_nome(nome_tecnico):
+        if nome_tecnico in dicionario_traducao:
+            return dicionario_traducao[nome_tecnico]
+        
+        nome_limpo = nome_tecnico.replace('num__', '').replace('cat__', '').replace('bin__', '')
+        return nome_limpo.replace('_', ' ').title()
+
+    # Aplicar a tradução
+    df_imp['nome_exibicao'] = df_imp['feature'].apply(limpar_nome)
+
+    # Exibição no Streamlit
+    st.markdown("### 📊 Fatores de Maior Peso")
+    st.markdown("As 3 principais variáveis que o modelo considerou para esta análise global:")
+
+    for i, row in df_imp.iterrows():
+        st.write(f"**{row['nome_exibicao']}**")
+        st.progress(int(row['importance'] * 100))
+        st.caption(f"Impacto no modelo: {row['importance']*100:.1f}%")
+
 # Função princial
 def main():
-
-    # Configura a Barra Lateral
+    # 1. Configura a Barra Lateral
     configurar_sidebar()
 
-    # Carrega o Modelo
+    # 2. Carrega o Modelo
     model = load_model()
 
-    # Corpo Principal
+    # 3. Corpo Principal
     st.title("🩺 Análise de Risco de Obesidade")
     st.markdown("""
     Preencha o formulário abaixo com os dados do paciente.
-    O sistema utilizará Machine Learning para calcular a probabilidade de risco de obesidade.
+    O sistema utilizará Inteligência Artificial para calcular a probabilidade de risco de obesidade.
     """)
     st.markdown("---")
 
-    # Formulário
+    # 4. Formulário
     input_df = get_user_input_features()
 
-    # Botão e Predição
+    # 5. Botão e Predição
     st.markdown("###")
     
     if st.button("🔍 Realizar Predição", type="primary", use_container_width=True):
@@ -301,11 +361,14 @@ def main():
                     st.success("✅ **BAIXO RISCO IMEDIATO**")
                     st.metric(label="Probabilidade de Risco", value=f"{probability[0][1] * 100:.1f}%")
                     st.info("👉 **Recomendação:** Continue mantendo hábitos saudáveis e acompanhamento regular.")
+                
+                st.markdown("---")
+                exibir_importancia_variaveis(model)
             
             except Exception as e:
                 st.error(f"Ocorreu um erro técnico ao realizar a predição: {e}")
         else:
             st.error("⚠️ O modelo de Inteligência Artificial não foi carregado corretamente. Verifique os arquivos.")
-
+            
 if __name__ == "__main__":
     main()
