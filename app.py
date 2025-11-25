@@ -4,9 +4,11 @@ import unicodedata
 
 # Importar biblioteca completa - terceiro
 import joblib
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import requests
+import shap
 import streamlit as st
 
 # CONFIGURAÇÃO DA PÁGINA
@@ -32,6 +34,84 @@ def ordenar_opcoes(lista):
     
     return sorted(lista, key=normalizar)
 
+# Traduzir os nomes do SHAPE
+def traduzir_nomes_features(lista_nomes_tecnicos):
+
+    """
+    Traduz os nomes técnicos do Pipeline para Português legível e profissional.
+    """
+
+    # Dicionário atualizado com o estilo preferido
+    mapa_nomes = {
+        # --- Numéricas ---
+        'num__imc': 'Índice de Massa Corporal (IMC)',
+        'num__idade': 'Idade',
+        
+        # --- Binárias ---
+        'bin__genero': 'Gênero',
+        'bin__b_historico_familiar': 'Histórico Familiar',
+        'bin__b_fuma': 'Hábito de Fumar',
+        'bin__b_come_alimentos_caloricos': 'Consumo de Calóricos',
+        'bin__b_monitora_calorias': 'Monitoramento de Calorias',
+        
+        # --- Categorias: Comer entre Refeições ---
+        'cat__freq_come_fora_refeicao_no': 'Comer entre refeições (Nunca)',
+        'cat__freq_come_fora_refeicao_Sometimes': 'Comer entre refeições (Às vezes)',
+        'cat__freq_come_fora_refeicao_Frequently': 'Comer entre refeições (Frequentemente)',
+        'cat__freq_come_fora_refeicao_Always': 'Comer entre refeições (Sempre)',
+        
+        # --- Categorias: Atividade Física ---
+        'cat__qtd_atv_fisicas_Sedentario': 'Sedentarismo',
+        'cat__qtd_atv_fisicas_Baixa_frequencia': 'Baixa Atividade Física',
+        'cat__qtd_atv_fisicas_Moderada_frequencia': 'Atividade Física Moderada',
+        'cat__qtd_atv_fisicas_Alta_frequencia': 'Alta Atividade Física',
+        
+        # --- Categorias: Água ---
+        'cat__qtd_agua_Baixo_consumo': 'Baixo consumo de água',
+        'cat__qtd_agua_Consumo_adequado': 'Consumo de água (Adequado)',
+        'cat__qtd_agua_Alto_consumo': 'Alto consumo de água',
+        
+        # --- Categorias: Transporte ---
+        'cat__meio_de_transporte_Automobile': 'Uso de Carro',
+        'cat__meio_de_transporte_Public_Transportation': 'Transporte Público',
+        'cat__meio_de_transporte_Motorbike': 'Uso de Moto',
+        'cat__meio_de_transporte_Bike': 'Uso de Bicicleta',
+        'cat__meio_de_transporte_Walking': 'Caminhada',
+
+        # --- Categorias: Refeições (Complementado no mesmo estilo) ---
+        'cat__qtd_refeicao_Tres_refeicoes_principais_por_dia': '3 Refeições principais/dia',
+        'cat__qtd_refeicao_Duas_refeicoes_principais_por_dia': '2 Refeições principais/dia',
+        'cat__qtd_refeicao_Uma_refeicao_principal_por_dia': '1 Refeição principal/dia',
+        'cat__qtd_refeicao_Quatro_ou_mais_refeicoes_principais_por_dia': '4+ Refeições principais/dia',
+        
+        # --- Categorias: Vegetais ---
+        'cat__qtd_vegetais_Sempre': 'Consumo de Vegetais (Sempre)',
+        'cat__qtd_vegetais_As_vezes': 'Consumo de Vegetais (Às vezes)',
+        'cat__qtd_vegetais_Raramente': 'Consumo de Vegetais (Raramente)',
+        
+        # --- Categorias: Telas/Internet ---
+        'cat__qtd_tmp_na_internet_Uso_baixo': 'Tempo em Telas (Baixo)',
+        'cat__qtd_tmp_na_internet_Uso_moderado': 'Tempo em Telas (Moderado)',
+        'cat__qtd_tmp_na_internet_Uso_intenso': 'Tempo em Telas (Intenso)',
+        
+        # --- Categorias: Álcool ---
+        'cat__freq_alcool_no': 'Consumo de Álcool (Não)',
+        'cat__freq_alcool_Sometimes': 'Consumo de Álcool (Às vezes)',
+        'cat__freq_alcool_Frequently': 'Consumo de Álcool (Frequentemente)',
+        'cat__freq_alcool_Always': 'Consumo de Álcool (Sempre)'
+    }
+    
+    nomes_traduzidos = []
+    for nome in lista_nomes_tecnicos:
+        if nome in mapa_nomes:
+            nomes_traduzidos.append(mapa_nomes[nome])
+        else:
+            # Fallback de segurança: Se aparecer algo novo, limpa o nome técnico
+            limpo = nome.replace('num__', '').replace('cat__', '').replace('bin__', '').replace('_', ' ').title()
+            nomes_traduzidos.append(limpo)
+            
+    return nomes_traduzidos
+        
 # Salvar o modelo em cache
 @st.cache_resource 
 
@@ -59,6 +139,17 @@ def load_model():
         pass
     
     return None
+
+# Criar e cachear o SHAPE
+@st.cache_resource
+
+def _get_shap_explainer(_classifier):
+
+    """
+    Cria e cacheia o explicador do SHAP (que é pesado de inicializar).
+    """
+
+    return shap.TreeExplainer(_classifier)
 
 # Configurar o barre lateral
 def configurar_sidebar():
@@ -100,6 +191,43 @@ def configurar_sidebar():
         st.subheader("📂 Código Fonte")
         st.markdown("Acesse o repositório completo do projeto:")
         st.link_button("🔗 Ver no GitHub", "https://github.com/RicardViana/fiap-data-viz-and-production-models-tc")
+
+# Gerar SHAP
+def gerar_explicacao_shap(model, input_df):
+
+    """
+    Processa os dados e gera o gráfico SHAP Waterfall.
+    """
+
+    # 1. Recupera os passos do Pipeline
+    preprocessor = model.named_steps['preprocess']
+    classifier = model.named_steps['clf']
+
+    # 2. Transforma os dados de entrada (Texto -> Números)
+    # O SHAP precisa receber os dados exatamente como o modelo recebe
+    input_transformed = preprocessor.transform(input_df)
+
+    # 3. Recupera os nomes técnicos das colunas e traduz
+    feature_names_raw = preprocessor.get_feature_names_out()
+    feature_names_pt = traduzir_nomes_features(feature_names_raw)
+
+    # 4. Calcula os valores SHAP
+    explainer = _get_shap_explainer(classifier)
+
+    # [:, :, 1] foca na classe positiva (Risco de Obesidade = 1)
+    shap_values = explainer(input_transformed)
+
+    # 5. Aplica os nomes traduzidos ao objeto SHAP
+    shap_values.feature_names = feature_names_pt
+
+    # 6. Gera o gráfico
+    # Ajustamos o tamanho da figura para ficar bem no layout wide
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    # max_display=10 mostra apenas os 10 fatores mais importantes para não poluir
+    shap.plots.waterfall(shap_values[0, :, 1], show=False, max_display=10)
+    
+    return plt.gcf()
 
 # Coletar os dados do questionario
 def get_user_input_features():
@@ -362,8 +490,25 @@ def main():
                     st.metric(label="Probabilidade de Risco", value=f"{probability[0][1] * 100:.1f}%")
                     st.info("👉 **Recomendação:** Continue mantendo hábitos saudáveis e acompanhamento regular.")
                 
+                # Exibição do SHAP
                 st.markdown("---")
-                exibir_importancia_variaveis(model)
+                st.header("Fatores de Influência (Explicabilidade)")
+                st.write("Entenda quais fatores específicos deste paciente **aumentaram (Vermelho)** ou **diminuíram (Azul)** o risco.")
+                
+                with st.spinner("Calculando impactos detalhados..."):
+                    fig_shap = gerar_explicacao_shap(model, input_df)
+                    st.pyplot(fig_shap)
+                    
+                    st.caption("""
+                    **Legenda do Gráfico:**
+                    - **Eixo X:** Probabilidade de Risco.
+                    - **Barras Vermelhas:** Fatores que "empurram" o risco para cima.
+                    - **Barras Azuis:** Fatores que "seguram" o risco para baixo.
+                    """)
+
+                # Exibição as principiais variaveis
+                #st.markdown("---")
+                #exibir_importancia_variaveis(model)
             
             except Exception as e:
                 st.error(f"Ocorreu um erro técnico ao realizar a predição: {e}")
