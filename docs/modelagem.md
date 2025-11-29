@@ -1,72 +1,132 @@
-# 🤖 Documentação da Modelagem e Algoritmos
+# 🤖 Documentação da Modelagem — Tech Challenge Fase 4
 
-Esta seção detalha o processo de construção, treinamento e validação dos modelos de Machine Learning utilizados para prever o risco de obesidade.
+Este documento apresenta, de forma estruturada e clara, todo o processo de **modelagem, tratamento de dados e avaliação dos algoritmos** utilizados no desenvolvimento do sistema preditivo de risco de obesidade.
 
-## 1. Definição do Problema e Variável Alvo
+---
 
-O objetivo do modelo não é apenas classificar o tipo de obesidade, mas sim identificar o **Risco de Obesidade** (Binário).
+## 1. 🎯 Definição do Problema
 
-A variável alvo (`target`) foi construída através de uma regra de negócio baseada em condições clínicas e comportamentais. Um paciente é considerado com **Risco (1)** se atender a critérios de sobrepeso E possuir hábitos de risco (sedentarismo, baixo consumo de água, histórico familiar, etc).
+O objetivo principal é prever **o risco de obesidade** de um paciente com base em hábitos, características físicas e comportamentais — permitindo que profissionais da saúde tomem decisões preventivas de forma mais assertiva.
 
-* **0:** Sem risco imediato.
-* **1:** Alto risco de obesidade.
+A variável-alvo foi convertida em um problema **binário**, indicando:
 
-## 2. Pré-processamento dos Dados
+* **0 — Sem Risco Imediato**
+* **1 — Alto Risco de Obesidade**
 
-Antes da modelagem, os dados passaram por um rigoroso processo de tratamento:
+A regra de negócio para definir o risco considerou:
 
-1.  **Limpeza e Tradução:** Conversão de variáveis categóricas do inglês para o português e padronização de escalas (ex: `Sometimes` -> `As_vezes`).
-2.  **Engenharia de Atributos:**
-    * Cálculo do **IMC** (Índice de Massa Corporal) baseado em Peso e Altura.
-    * Criação da variável alvo binária baseada em regras condicionais.
-3.  **Tratamento de Tipos:** Conversão de floats e inteiros para garantir consistência.
+* níveis de sobrepeso/obesidade da variável original `Obesity`,
+* hábitos de risco (sedentarismo, ingestão de água reduzida, consumo frequente de alimentos calóricos, histórico familiar etc.).
 
-## 3. Pipeline de Transformação
+---
 
-Para garantir a reprodutibilidade e evitar *data leakage*, utilizamos um **Pipeline do Scikit-Learn** com as seguintes etapas:
+## 2. 🧼 Pré-processamento dos Dados
 
-* **Variáveis Numéricas (`idade`, `imc`):** Normalização com `MinMaxScaler` para colocar os dados na mesma escala.
-* **Variáveis Categóricas:** Transformação com `OneHotEncoder` para converter categorias em vetores binários.
-* **Balanceamento de Classes:** Aplicação do **SMOTE** (Synthetic Minority Over-sampling Technique) para corrigir o desbalanceamento entre as classes de risco e não-risco.
+O conjunto de dados passou por diversas etapas de preparação, garantindo consistência e qualidade para a etapa de modelagem.
 
-## 4. Comparação de Modelos
+### 🔹 **2.1 Limpeza e Padronização**
 
-Foram testados dois algoritmos de classificação para identificar qual performava melhor no cenário proposto.
+* Padronização de categorias em inglês.
+* Correção de ruídos nas variáveis de escala (1–3 ou 1–4) conforme dicionário FIAP.
+* Normalização de representações inconsistentes.
 
-### Modelo 1: Regressão Logística
-Utilizado como *baseline* devido à sua interpretabilidade.
+### 🔹 **2.2 Engenharia de Atributos**
+
+Principais variáveis criadas:
+
+* **IMC (peso / altura²):** indicador central para risco de obesidade.
+* **Variável‑alvo binária** com base em critérios clínicos e comportamentais.
+
+### 🔹 **2.3 Tratamento de Tipos**
+
+* Conversão de numéricos para `float`/`int`.
+* Conversão de categóricos para `string`.
+
+---
+
+## 3. 🧱 Pipeline de Transformação
+
+Para garantir reprodutibilidade e evitar *data leakage*, foi utilizado um pipeline Scikit‑Learn.
+
+### Componentes do Pipeline:
+
+* **Numéricas (idade, IMC):** normalização com `MinMaxScaler`.
+* **Categóricas:** codificação com `OneHotEncoder`.
+* **Balanceamento:** técnica **SMOTE** devido ao desbalanceamento entre classes.
+
+Esse pipeline foi salvo junto ao modelo final para ser utilizado tanto no treinamento quanto no ambiente de produção (Streamlit).
+
+---
+
+## 4. 🤖 Modelos Testados
+
+Diversos modelos foram avaliados para identificar aquele com melhor desempenho e menor risco de subdiagnosticar pacientes.
+
+### **Modelo 1 — Regressão Logística (Baseline)**
+
+* Simples e interpretável.
+* Serviu como referência inicial.
 * **Acurácia:** 94.8%
-* **AUC-ROC:** 0.99
+* **AUC‑ROC:** 0.99
 
-### Modelo 2: Random Forest (Escolhido) 🏆
-Utilizado pela sua robustez em lidar com dados não lineares e complexos.
+### **Modelo 2 — Random Forest (Modelo Final)** 🏆
+
+Escolhido por sua robustez, não linearidade e excelente desempenho.
+
 * **Acurácia:** 99.2%
-* **AUC-ROC:** 1.00
+* **AUC‑ROC:** 1.00
 
-**Tabela Comparativa de Métricas (Dados de Teste):**
+### 📊 Comparação de Métricas (Dados de Teste)
 
-| Métrica | Regressão Logística | Random Forest |
-| :--- | :--- | :--- |
-| **Acurácia** | 0.948 | **0.992** |
-| **Precisão** | 0.976 | **0.989** |
-| **Recall** | 0.952 | **1.000** |
-| **F1-Score** | 0.964 | **0.995** |
+| Métrica      | Regressão Logística | Random Forest |
+| ------------ | ------------------- | ------------- |
+| **Acurácia** | 0.948               | **0.992**     |
+| **Precisão** | 0.976               | **0.989**     |
+| **Recall**   | 0.952               | **1.000**     |
+| **F1-Score** | 0.964               | **0.995**     |
 
-> O modelo **Random Forest** foi selecionado para produção devido à sua performance superior, especialmente no **Recall (1.0)**, garantindo que o modelo raramente deixe de identificar um paciente em risco.
+📌 **Motivo da escolha:** o Random Forest apresentou **Recall = 1.0**, garantindo que praticamente nenhum paciente em risco seja classificado como seguro.
 
-## 5. Importância das Variáveis
+---
 
-A análise de *feature importance* do Random Forest revelou quais fatores mais influenciam no diagnóstico de risco:
+## 5. 📌 Importância das Variáveis
 
-1.  **IMC (Índice de Massa Corporal):** O fator predominante (peso ~53%).
-2.  **Histórico Familiar:** Forte componente genético/ambiental.
-3.  **Idade:** Fator demográfico relevante.
-4.  **Hábitos Alimentares:** Comer entre refeições ("beliscar") apareceu com destaque.
+A análise de *feature importance* mostrou os fatores mais relevantes para o risco de obesidade:
 
-## 6. Implementação em Produção
+1. **IMC — fator mais influente (>50%)**
+2. **Histórico familiar de sobrepeso**
+3. **Idade**
+4. **Hábitos alimentares:** especialmente `CAEC` (comer entre refeições)
+5. **Nível de atividade física (FAF)**
 
-O modelo final foi serializado utilizando a biblioteca `joblib` e está integrado ao aplicativo Streamlit.
+---
 
-* **Arquivo do modelo:** `models/modelo_risco_obesidade_random_forest.joblib`
-* **Input:** O modelo recebe um DataFrame com 15 variáveis processadas pelo formulário do usuário.
-* **Output:** Classe (0 ou 1) e Probabilidade (%).
+## 6. ⚙️ Deploy e Produção
+
+O modelo final foi integrado ao aplicativo Streamlit.
+
+### 🔹 Arquivos Importantes
+
+* `models/modelo_risco_obesidade_random_forest.joblib` — modelo final treinado
+* `app.py` — lógica do formulário e predição
+* `data/processed/base_limpa.csv` — dados processados
+* Pipeline salvo junto ao modelo
+
+### 🔹 Entrada do Modelo
+
+Um DataFrame com as variáveis já transformadas e codificadas.
+
+### 🔹 Saída do Modelo
+
+* **Classe (0 ou 1)**
+* **Probabilidade de risco (%)**
+
+Essa estrutura permite que o sistema seja facilmente adaptado para novos dados ou reentreinamento.
+
+---
+
+## 7. 📎 Referências
+
+* Dicionário oficial FIAP (`dicionario_obesity_fiap.pdf`)
+* Documento técnico do Tech Challenge Fase 4
+* Notebook do projeto (`notebooks/tech_challenge_codigo.ipynb`)
