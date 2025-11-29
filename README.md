@@ -1,13 +1,9 @@
 # Modelo de ML para Previsão de Obesidade
 
-<a target="_blank" href="https://cookiecutter-data-science.drivendata.org/">
-    <img src="https://img.shields.io/badge/CCDS-Project%20template-328F97?logo=cookiecutter" />
-</a>
-<img src="https://img.shields.io/badge/Python-3.10-blue" />
-<img src="https://img.shields.io/badge/Status-Em%20Desenvolvimento-yellow" />
+[![CCDS](https://img.shields.io/badge/CCDS-Project%20template-328F97?logo=cookiecutter)](https://cookiecutter-data-science.drivendata.org/) ![Python](https://img.shields.io/badge/Python-3.10-blue) ![Status](https://img.shields.io/badge/Status-Em%20Desenvolvimento-yellow)
 
 ## 📋 Sobre o Projeto
-Este projeto tem como objetivo desenvolver um modelo de **Machine Learning** capaz de classificar ou prever níveis de obesidade com base em dados demográficos, hábitos alimentares e condição física. O objetivo é auxiliar na identificação precoce de fatores de risco e apoiar a tomada de decisão em saúde preventiva.
+Este projeto tem como objetivo desenvolver um modelo de **Machine Learning** capaz de prever se uma pessoa pode ter obesidade. O objetivo é auxiliar na identificação precoce de fatores de risco e apoiar a tomada de decisão em saúde preventiva.
 
 O projeto segue as melhores práticas de Engenharia de Machine Learning, utilizando uma estrutura modular para processamento de dados, treinamento e inferência.
 
@@ -15,7 +11,6 @@ O projeto segue as melhores práticas de Engenharia de Machine Learning, utiliza
 * Realizar análise exploratória para entender correlações entre hábitos e obesidade.
 * Criar um pipeline de pré-processamento de dados robusto.
 * Treinar e validar modelos preditivos (e.g., Random Forest, XGBoost, Logistic Regression).
-* Disponibilizar scripts para inferência em novos dados.
 
 ### 👨‍💻 Equipe
 * [Elton José Araujo Silva](https://www.linkedin.com/in/elton-araujo-silva/)  
