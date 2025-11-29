@@ -11,6 +11,9 @@ import requests
 import shap
 import streamlit as st
 
+# Variavies 
+validar_shap = 'n'
+
 # CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(
     page_title="Predição de Risco de Obesidade", # Nome que vai aparecer na página do navegador
@@ -211,6 +214,12 @@ def gerar_explicacao_shap(model, input_df):
     feature_names_raw = preprocessor.get_feature_names_out()
     feature_names_pt = traduzir_nomes_features(feature_names_raw)
 
+    df_mapeamento = pd.DataFrame({
+        'Nome Técnico (Raw)': feature_names_raw,
+        'Nome Traduzido': feature_names_pt,  
+        'Valor Inputado': input_transformed[0]
+    })
+
     # 4. Calcula os valores SHAP
     explainer = _get_shap_explainer(classifier)
 
@@ -227,7 +236,7 @@ def gerar_explicacao_shap(model, input_df):
     # max_display=10 mostra apenas os 10 fatores mais importantes para não poluir
     shap.plots.waterfall(shap_values[0, :, 1], show=False, max_display=10)
     
-    return plt.gcf()
+    return plt.gcf(), df_mapeamento
 
 # Coletar os dados do questionario
 def get_user_input_features():
@@ -496,15 +505,29 @@ def main():
                 st.write("Entenda quais fatores específicos deste paciente **aumentaram (Vermelho)** ou **diminuíram (Azul)** o risco.")
                 
                 with st.spinner("Calculando impactos detalhados..."):
-                    fig_shap = gerar_explicacao_shap(model, input_df)
+                    fig_shap, df_map = gerar_explicacao_shap(model, input_df)
                     st.pyplot(fig_shap)
                     
-                    st.caption("""
+                    st.caption("""a
                     **Legenda do Gráfico:**
                     - **Eixo X:** Probabilidade de Risco.
                     - **Barras Vermelhas:** Fatores que "empurram" o risco para cima.
                     - **Barras Azuis:** Fatores que "seguram" o risco para baixo.
                     """)
+
+                # Validar SHAP
+                if validar_shap.lower() == 's':
+
+                    st.markdown("---")
+                    st.header("🕵️‍♀️ Debug: Ver Mapeamento Técnico das Variáveis")
+                    st.write("Verifique abaixo como cada variável técnica foi traduzida para o gráfico. Útil para encontrar duplicidades.")
+
+                    with st.expander("Clique aqui para ver"):
+                        st.dataframe(
+                            df_map.sort_values(by='Nome Técnico (Raw)'), 
+                            width='stretch',
+                            hide_index=True
+                        )
 
                 # Exibição as principiais variaveis
                 #st.markdown("---")
