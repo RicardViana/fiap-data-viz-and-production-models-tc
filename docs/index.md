@@ -32,7 +32,3 @@ Este projeto foi realizado pelo **Grupo 63**:
 * **Lucas Augusto Fernandes de Lira**
 * **Mariana Domingues Brandão**
 * **Ricardo Vieira Viana**
-
----
-
-Para começar a usar ou contribuir com o projeto, visite a página [Getting Started](getting-started.md).
