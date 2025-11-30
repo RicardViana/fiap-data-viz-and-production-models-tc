@@ -40,7 +40,7 @@ Nela, o usuário pode inserir suas informações e obter uma previsão imediata 
 
 ## 📘 Documentação no MkDocs
 E para auxiliar foi desenvolvido a documentação via MkDocs e disponibilizado no link
-[Projeto Tech Challenge](https://ricardviana.github.io/fiap-data-viz-and-production-models-tc/)
+**[Projeto Tech Challenge](https://ricardviana.github.io/fiap-data-viz-and-production-models-tc/)**
 
 ---
 
