@@ -266,16 +266,16 @@ def get_user_input_features():
     if imc < 18.5:
         tabela_imc = 'Abaixo do peso'
 
-    elif imc > 18.5 and imc <= 24.9:
+    elif imc >= 18.5 and imc <= 24.9:
         tabela_imc = 'Peso normal'
 
-    elif imc > 25.0 and imc <= 29.9:
+    elif imc >= 25.0 and imc <= 29.9:
         tabela_imc = 'Sobrepeso'
 
-    elif imc > 30.0 and imc <= 34.9:
+    elif imc >= 30.0 and imc <= 34.9:
         tabela_imc = 'Obesidade grau I'
 
-    elif imc > 35.0 and imc <= 39.9:
+    elif imc >= 35.0 and imc <= 39.9:
         tabela_imc = 'Obesidade grau II'
 
     else:
