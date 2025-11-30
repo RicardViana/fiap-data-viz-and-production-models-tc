@@ -526,11 +526,11 @@ def main():
                     fig_shap, df_map = gerar_explicacao_shap(model, input_df)
                     st.pyplot(fig_shap)
                     
-                    st.caption("""a
-                    **Legenda do Gráfico:**
-                    - **Eixo X:** Probabilidade de Risco.
-                    - **Barras Vermelhas:** Fatores que "empurram" o risco para cima.
-                    - **Barras Azuis:** Fatores que "seguram" o risco para baixo.
+                    st.markdown("""
+                    **Legenda do Gráfico:**  
+                    - **Eixo X:** Probabilidade de Risco.  
+                    - **Barras Vermelhas:** Fatores que "empurram" o risco para cima.  
+                    - **Barras Azuis:** Fatores que "seguram" o risco para baixo.  
                     """)
 
                 # Validar SHAP
