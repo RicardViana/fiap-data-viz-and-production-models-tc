@@ -263,7 +263,25 @@ def get_user_input_features():
     imc = int(np.ceil(peso / (altura ** 2)))
     genero = 1 if genero_label == "Feminino" else 0
     
-    st.info(f"ℹ️ **IMC Calculado:** {imc} kg/m²")
+    if imc < 18.5:
+        tabela_imc = 'Abaixo do peso'
+
+    elif imc > 18.5 and imc <= 24.9:
+        tabela_imc = 'Peso normal'
+
+    elif imc > 25.0 and imc <= 29.9:
+        tabela_imc = 'Sobrepeso'
+
+    elif imc > 30.0 and imc <= 34.9:
+        tabela_imc = 'Obesidade grau I'
+
+    elif imc > 35.0 and imc <= 39.9:
+        tabela_imc = 'Obesidade grau II'
+
+    else:
+        tabela_imc = 'Obesidade grau III'
+
+    st.info(f"ℹ️ **IMC Calculado:** {imc} kg/m² ({tabela_imc})")
     st.markdown("---")
 
     # HISTÓRICO E HÁBITOS
