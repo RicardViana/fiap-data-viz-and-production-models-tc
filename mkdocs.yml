@@ -1,6 +1,9 @@
 site_name: Modelo ML para prever obesidade
-
 site_author: grupo 63 FIAP Fase 4
+
+site_url: https://ricardviana.github.io/fiap-data-viz-and-production-models-tc/
+repo_url: https://github.com/RicardViana/fiap-data-viz-and-production-models-tc
+repo_name: GitHub
 
 nav:
   - Início: index.md
