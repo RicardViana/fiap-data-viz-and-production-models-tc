@@ -1,7 +1,7 @@
 # Data
 #/data/
 
-.mp4
+*.mp4
 
 # Mac OS-specific storage files
 .DS_Store
