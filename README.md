@@ -129,8 +129,12 @@ Métricas avaliadas:
 
 O painel apresenta insights como:
 
-* 
+* IMC Médio
+* Média de idade
+* Risco de obesidade 
+* Nível de obesidade 
 
+E pode ser consultando através do [Dashboard](https://app.powerbi.com/view?r=eyJrIjoiYjU2ZThiZjktMWVmMS00ZGI0LThmMTItMGE2ZjcyNWNhZmY2IiwidCI6ImM0MjlmMGY3LTY4YzEtNGVlZC05NzRlLTRhMDZlYzUzOTc5MiJ9)
 
 ---
 
